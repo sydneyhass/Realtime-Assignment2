@@ -2,16 +2,15 @@
 #include <stdlib.h>
 
 int main(void) {
-//	METRONOME
-//	=========
-//
-//	Reference: look at the controller from Lab7
-//	=========
-//
-//	void metronome_thread()		// create thread in main; thread runs this function
-//	=======================		// purpose: "drive" metronome
-//	                          //			    receives pulse from interval timer; each time the timer expires
-//	                          //          receives pulses from io_write (quit and pause <int>)
+
+	//TODO: Reference controller from lab 7
+	// create thread in main; thread runs this function
+	// purpose: "drive" metronome
+	// receives pulse from interval timer; each time the timer expires
+	// receives pulses from io_write (quit and pause <int>)
+	void metronome_thread() {
+
+	}
 //
 //	  // Phase I - create a named channel to receive pulses
 //	  call attach = name_attach( NULL, "metronome", 0 )
