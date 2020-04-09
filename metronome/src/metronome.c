@@ -114,8 +114,8 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 	int nb;
 	if(data == NULL) return 0;
 
-//	sprintf(data, "[metronome: %d beats/min, time signature: %d%d, secs-per-beat: %.2f, nanoSecs: %d]\n",
-//			);
+	//	sprintf(data, "[metronome: %d beats/min, time signature: %d%d, secs-per-beat: %.2f, nanoSecs: %d]\n",
+	//			);
 
 	nb = strlen(data);
 
@@ -154,8 +154,8 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 		int priority = 0;
 
 		if(strcmp(buf, "pause") == 0) {
-//			process pauseValue
-//			validate pauseValue for range check
+			//			process pauseValue
+			//			validate pauseValue for range check
 			if(MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue) == -1) {
 				fprintf(stderr, "Error during message send pulse!\n");
 				exit(EXIT_FAILURE);
@@ -197,9 +197,43 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void
 
 int main(int argc, char* argv[]) {
 	DataTableRow row;
+	dispatch_t* dpp;
+	resmgr_io_funcs_t io_funcs;
+	resmgr_connect_funcs_t connect_funcs;
+	iofunc_attr_t ioattr;
+	dispatch_context_t   *ctp;
 
 	if(argc != 4) {
 		fprintf(stderr, "Error! Wrong number of arguments. Received %d, expected 4.\n", argc);
 		exit(EXIT_FAILURE);
 	}
+
+	int id;
+
+	if ((dpp = dispatch_create ()) == NULL) {
+		fprintf (stderr,
+				"%s:  Unable to allocate dispatch context.\n", argv [0]);
+		return (EXIT_FAILURE);
+	}
+	iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &connect_funcs, _RESMGR_IO_NFUNCS, &io_funcs);
+	connect_funcs.open = io_open;
+	io_funcs.read = io_read;
+	io_funcs.write = io_write;
+
+	iofunc_attr_init(&ioattr, S_IFCHR | 0666, NULL, NULL);
+
+	if ((id = resmgr_attach (dpp, NULL, "/dev/local/metronome",
+			_FTYPE_ANY, 0, &connect_funcs, &io_funcs,
+			&ioattr)) == -1) {
+		fprintf (stderr,
+				"%s:  Unable to attach name.\n", argv [0]);
+		return (EXIT_FAILURE);
+	}
+
+	ctp = dispatch_context_alloc(dpp);
+	while(1) {
+		ctp = dispatch_block(ctp);
+		dispatch_handler(ctp);
+	}
+	return EXIT_SUCCESS;
 }
