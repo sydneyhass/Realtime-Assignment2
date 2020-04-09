@@ -146,32 +146,21 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 	return(_RESMGR_NPARTS(1));
 }
 
-//	  if (buf == "pause")     // similar to alert <int> from Lab7
-//	    process pauseValue
-//	    validate pauseValue for range check
-//	    MsgSendPulse(metronome_coid, priority, PAUSE_PULSE_CODE, pauseValue);
-//
-//	  if (buf == "quit")
-//	    MsgSendPulse(metronome_coid, priority, QUIT_PULSE_CODE, 0;) // like Lab7
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 {
 	int nb = 0;
 
 	if( msg->i.nbytes == ctp->info.msglen - (ctp->offset + sizeof(*msg) ))
 	{
-		/* have all the data */
 		char *buf;
-		char *alert_msg;
-		int i, small_integer;
 		buf = (char *)(msg+1);
 
-		if(strcmp(buf, "pause") == 0){
-			for(i = 0; i < 2; i++){
-				alert_msg = strsep(&buf, " ");
-			}
-
-		} else {
-			strcpy(data, buf);
+		if(strcmp(buf, "pause") == 0) {
+//			process pauseValue
+//			validate pauseValue for range check
+			MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue);
+		} else if(strcmp(buf, "quit")) {
+			MsgSendPulse(metronome_coid, priority, QUIT_PULSE, pauseValue);
 		}
 
 		nb = msg->i.nbytes;
