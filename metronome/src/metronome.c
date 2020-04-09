@@ -55,7 +55,33 @@ void metronome_thread() {
 	//
 	//	  calculate the seconds-per-beat and nano seconds for the interval timer
 	//	  create an interval timer to "drive" the metronome
-	//	  	configure the interval timer to send a pulse to channel at attach when it expires
+	//	  configure the interval timer to send a pulse to channel at attach when it expires
+
+	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
+	//	  for (;;) {
+	//	    rcvid = MsgReceive(attach->chid);
+	//
+	//	    if ( rcvid == 0 )
+	//	      switch( msg.pulse_code )
+	//	        case: METRONOME.pulse_code
+	//	          //display the beat to stdout
+	//	          //  must handle 3 cases:
+	//	          //    start-of-measure: |1
+	//	          //    mid-measure: the symbol, as seen in the column "Pattern for Intervals within Each Beat"
+	//	          //    end-of-measure: \n
+	//
+	//	       case: PAUSE_PULSE:
+	//	       		// pause the running timer for pause <int> seconds
+	//	          // AVOID: calling sleep()
+	//
+	//	       case: QUIT_PULSE
+	//	       	  // implement Phase III:
+	//	          //  delete interval timer
+	//	          //  call name_detach()
+	//	          //  call name_close()
+	//	          //  exit with SUCCESS
+	//	  }
+	//
 	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
 		fprintf(stderr, "Name attach error\n");
 		exit(EXIT_FAILURE);
@@ -83,43 +109,13 @@ void metronome_thread() {
 	}
 }
 
-
-
-//
-//	  // Phase II - receive pulses from interval timer OR io_write(pause, quit)
-//	  for (;;) {
-//	    rcvid = MsgReceive(attach->chid);
-//
-//	    if ( rcvid == 0 )
-//	      switch( msg.pulse_code )
-//	        case: METRONOME.pulse_code
-//	          //display the beat to stdout
-//	          //  must handle 3 cases:
-//	          //    start-of-measure: |1
-//	          //    mid-measure: the symbol, as seen in the column "Pattern for Intervals within Each Beat"
-//	          //    end-of-measure: \n
-//
-//	       case: PAUSE_PULSE:
-//	       		// pause the running timer for pause <int> seconds
-//	          // AVOID: calling sleep()
-//
-//	       case: QUIT_PULSE
-//	       	  // implement Phase III:
-//	          //  delete interval timer
-//	          //  call name_detach()
-//	          //  call name_close()
-//	          //  exit with SUCCESS
-//	  }
-//
-
-//TODO: calculations for secs-per-beat, nanoSecs
-//	  sprintf(data, "[metronome: %d beats/min, time signature %d/%d, secs-per-beat: %.2f, nanoSecs: %d]\n",
-//
-//	  nb = strlen(data);
 int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 {
 	int nb;
 	if(data == NULL) return 0;
+
+//	sprintf(data, "[metronome: %d beats/min, time signature: %d%d, secs-per-beat: %.2f, nanoSecs: %d]\n",
+//			);
 
 	nb = strlen(data);
 
@@ -154,13 +150,21 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 	{
 		char *buf;
 		buf = (char *)(msg+1);
+		int pauseValue = 0;
+		int priority = 0;
 
 		if(strcmp(buf, "pause") == 0) {
 //			process pauseValue
 //			validate pauseValue for range check
-			MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue);
+			if(MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue) == -1) {
+				fprintf(stderr, "Error during message send pulse!\n");
+				exit(EXIT_FAILURE);
+			}
 		} else if(strcmp(buf, "quit")) {
-			MsgSendPulse(metronome_coid, priority, QUIT_PULSE, pauseValue);
+			if(MsgSendPulse(metronome_coid, priority, QUIT_PULSE, pauseValue) == -1) {
+				fprintf(stderr, "Error during message send pulse!\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		nb = msg->i.nbytes;
