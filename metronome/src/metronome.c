@@ -10,6 +10,9 @@
 // purpose: "drive" metronome
 // receives pulse from interval timer; each time the timer expires
 // receives pulses from io_write (quit and pause <int>)
+
+int metronome_coid;
+
 typedef union {
 	struct _pulse pulse;
 	char msg[255];
@@ -17,11 +20,9 @@ typedef union {
 
 #define METRONOME_PULSE 0
 
-#define PAUSE_PULSE	(METRONOME_PULSE + 1)
-#define QUIT_PULSE	(METRONOME_PULSE + 2)
-#define RESTART_PULSE (METRONOME_PULSE + 3)
-#define SET_PULSE 	(METRONOME_PULSE + 4)
-#define STOP_PULSE	(METRONOME_PULSE + 5)
+#define READ_PULSE 	(METRONOME_PULSE + 1)
+#define PAUSE_PULSE	(METRONOME_PULSE + 2)
+#define QUIT_PULSE	(METRONOME_PULSE + 3)
 
 char data[255];
 
@@ -67,15 +68,14 @@ void metronome_thread() {
 		}
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
+			case READ_PULSE:
+				break;
 			case PAUSE_PULSE:
 				break;
 			case QUIT_PULSE:
 				break;
-			case RESTART_PULSE:
-				break;
-			case SET_PULSE:
-				break;
-			case STOP_PULSE:
+			default:
+				fprintf(stderr, "");
 				break;
 
 			}
@@ -165,16 +165,11 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 		int i, small_integer;
 		buf = (char *)(msg+1);
 
-		if(strstr(buf, "alert") != NULL){
+		if(strcmp(buf, "pause") == 0){
 			for(i = 0; i < 2; i++){
 				alert_msg = strsep(&buf, " ");
 			}
-			small_integer = atoi(alert_msg);
-			if(small_integer >= 1 && small_integer <= 99){
-//				MsgSendPulse(server_coid, SchedGet(0,0,NULL), _PULSE_CODE_MINAVAIL, small_integer);
-			} else {
-				printf("Integer is not between 1 and 99.\n");
-			}
+
 		} else {
 			strcpy(data, buf);
 		}
@@ -189,14 +184,12 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 	return (_RESMGR_NPARTS (0));
 }
 
-//	    metronome_coid = name_open( "metronome", 0 );
-//	    return iofunc_default_open(...);
 int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void *extra)
 {
-//	if ((server_coid = name_open("mydevice", 0)) == -1) {
-//		perror("name_open failed.\n");
-//		return EXIT_FAILURE;
-//	}
+	if ((metronome_coid = name_open("metronome", 0)) == -1) {
+		perror("name_open failed.\n");
+		return EXIT_FAILURE;
+	}
 	return (iofunc_open_default (ctp, msg, handle, extra));
 }
 
