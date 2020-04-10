@@ -106,3 +106,19 @@ Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/sydne
 
 !ENTRY com.qnx.tools.ide.capabilities.ui 4 0 2020-04-09 17:03:47.721
 !MESSAGE activityProfiles.activityRequirementBinding: Invalid requiredActivityId com.qnx.tools.ide.capabilities.ui.activity.qnxDeveloper
+
+!ENTRY com.qnx.tools.ide.qde.debug.ui 4 -1 2020-04-09 20:36:59.280
+!MESSAGE No target connection, please create a connection first
+!STACK 1
+org.eclipse.core.runtime.CoreException: No target connection, please create a connection first
+	at com.qnx.tools.ide.qde.internal.ui.launch.dsf.QDELaunchConfigurationDelegate.checkConnectionStatus(QDELaunchConfigurationDelegate.java:547)
+	at com.qnx.tools.ide.qde.internal.ui.launch.dsf.QDELaunchConfigurationDelegate.launch(QDELaunchConfigurationDelegate.java:126)
+	at org.eclipse.debug.internal.core.LaunchConfiguration.launch(LaunchConfiguration.java:885)
+	at org.eclipse.debug.internal.core.LaunchConfiguration.launch(LaunchConfiguration.java:739)
+	at org.eclipse.debug.internal.ui.DebugUIPlugin.buildAndLaunch(DebugUIPlugin.java:1039)
+	at org.eclipse.debug.internal.ui.DebugUIPlugin$8.run(DebugUIPlugin.java:1256)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+!SUBENTRY 1 com.qnx.tools.ide.qde.debug.ui 4 0 2020-04-09 20:36:59.281
+!MESSAGE No target connection, please create a connection first
+!SUBENTRY 1 com.qnx.tools.ide.qde.debug.ui 4 0 2020-04-09 20:36:59.281
+!MESSAGE No target connection, please create a connection first

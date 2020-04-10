@@ -5,12 +5,6 @@
 #include <sys/dispatch.h>
 #include <sys/neutrino.h>
 
-//TODO: Reference controller from lab 7
-// create thread in main; thread runs this function
-// purpose: "drive" metronome
-// receives pulse from interval timer; each time the timer expires
-// receives pulses from io_write (quit and pause <int>)
-
 int metronome_coid;
 
 typedef union {
@@ -197,10 +191,6 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void
 //	    beats-per-minute
 //	    time-signature (top)
 //	    time-signature (bottom)
-//
-//	  implement main(), following simple_resmgr2.c and Lab7 as a guide
-//	    device path (FQN): /dev/local/metronome
-
 int main(int argc, char* argv[]) {
 	dispatch_t* dpp;
 	resmgr_io_funcs_t io_funcs;
@@ -214,6 +204,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	int id;
+	printf(sizeof(t[0]) + "\n" + sizeof(t[4]));
 
 	if ((dpp = dispatch_create ()) == NULL) {
 		fprintf (stderr,
