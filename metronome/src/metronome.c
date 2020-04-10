@@ -55,19 +55,25 @@ void* metronome_thread() {
 	long nanoSec = secBeat / t[row].interval_per_beat * 1000000000;
 	int count = 0;
 	
-	int timer_return;
 	timer_t timerID;
 	struct itimerspec itimer;
 
-	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
+if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
 		fprintf(stderr, "Name attach error\n");
 		exit(EXIT_FAILURE);
 	}
 
-	SIGEV_PULSE_INIT(&pulse_handler, metronome_coid, SIGEV_PULSE_PRIO_INHERIT, 0, 0);
+SIGEV_PULSE_INIT(&pulse_handler, metronome_coid, SIGEV_PULSE_PRIO_INHERIT, 0, 0);
 
 	// create an interval timer to "drive" the metronome
 	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
+
+	//	  calculate the seconds-per-beat and nano seconds for the interval timer
+	double secBeat = bpm / 60;
+	double nanoSec = secBeat / t[row].interval_per_beat;
+
+	//	  create an interval timer to "drive" the metronome
+	if(timer_create(CLOCK_REALTIME, &pulse_handler, &timerID) == -1) {
 		fprintf(stderr, "Timer create error\n");
 		exit(EXIT_FAILURE);
 	}
