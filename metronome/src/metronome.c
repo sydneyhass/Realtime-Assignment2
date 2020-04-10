@@ -44,8 +44,10 @@ void metronome_thread() {
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
-
-
+	int secBeat = bpm / 60
+	double nanoSec = secBeat / t[row].interval_per_beat
+	int count = 0;
+	
 	// Phase I - create a named channel to receive pulses
 	//
 	//	  calculate the seconds-per-beat and nano seconds for the interval timer
@@ -83,7 +85,16 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
-				printf();
+			//If timer 
+				if(count == 0) printf("%c%c", t[row].interval[count], t[row].interval[++count])
+			//if counter is at end print new line, reset counter
+				if(count == t[row].interval_per_beat - 1){
+					printf("%c\n"t[row].interval[count]);
+					count = 0;
+					break;
+				}
+				else printf("%c", t[row].interval[count]);
+				++count;
 				break;
 			case READ_PULSE:
 				break;
@@ -100,7 +111,6 @@ void metronome_thread() {
 			default:
 				fprintf(stderr, "");
 				break;
-
 			}
 		}
 	}
