@@ -4,7 +4,7 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 #include <sys/neutrino.h>
-
+#include <signal.h>
 #include <sys/siginfo.h>
 #include <time.h>
 
@@ -102,7 +102,7 @@ void metronome_thread() {
 				++count;
 				break;
 			case PAUSE_PULSE:
-				itimer.it_value.tv_sec = msg.pulse.value;
+				itimer.it_value.tv_sec = msg.pulse.value.sival_int;
 				itimer.it_value.tv_nsec = 0;
 				if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
 						fprintf(stderr, "Timer set error\n");
