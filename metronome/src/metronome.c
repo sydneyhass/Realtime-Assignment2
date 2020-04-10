@@ -17,9 +17,8 @@ typedef union {
 
 #define METRONOME_PULSE 0
 
-#define READ_PULSE 	(METRONOME_PULSE + 1)
-#define PAUSE_PULSE	(METRONOME_PULSE + 2)
-#define QUIT_PULSE	(METRONOME_PULSE + 3)
+#define PAUSE_PULSE	(METRONOME_PULSE + 1)
+#define QUIT_PULSE	(METRONOME_PULSE + 2)
 
 char data[255];
 int bpm;
@@ -67,6 +66,8 @@ void metronome_thread() {
 		exit(EXIT_FAILURE);
 	}
 
+
+	//	  configure the interval timer to send a pulse to channel at attach when it expires
 	itimer.it_interval.tv_nsec = 0;
 	itimer.it_interval.tv_sec = 0;
 	itimer.it_value.tv_sec = 0;
@@ -76,9 +77,6 @@ void metronome_thread() {
 		fprintf(stderr, "Timer set error\n");
 		exit(EXIT_FAILURE);
 	}
-
-	//	  configure the interval timer to send a pulse to channel at attach when it expires
-
 
 	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
 	//	  for (;;) {
@@ -236,7 +234,6 @@ int main(int argc, char* argv[]) {
 	bpm = atoi(argv[1]);
 
 	int id;
-	printf(sizeof(t[0]) + "\n" + sizeof(t[4]));
 
 	if ((dpp = dispatch_create ()) == NULL) {
 		fprintf (stderr,
