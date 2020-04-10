@@ -44,10 +44,13 @@ struct DataTableRow t[] = {
 };
 
 void metronome_thread() {
+	struct sigevent pulse_handler;
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
-	int timer;
+	int timer_return;
+	timer_t timerID;
+	struct itimerspec itimer;
 
 
 	// Phase I - create a named channel to receive pulses
@@ -59,9 +62,21 @@ void metronome_thread() {
 	//	  calculate the seconds-per-beat and nano seconds for the interval timer
 
 	//	  create an interval timer to "drive" the metronome
-	if((timer = timer_create()) == -1) {
-
+	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
+		fprintf(stderr, "Timer create error\n");
+		exit(EXIT_FAILURE);
 	}
+
+	itimer.it_interval.tv_nsec = 0;
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_nsec = 0;
+
+	if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
+		fprintf(stderr, "Timer set error\n");
+		exit(EXIT_FAILURE);
+	}
+
 	//	  configure the interval timer to send a pulse to channel at attach when it expires
 
 
@@ -93,12 +108,13 @@ void metronome_thread() {
 			case METRONOME_PULSE:
 //				printf();
 				break;
-			case READ_PULSE:
-				break;
 			case PAUSE_PULSE:
 				break;
 			case QUIT_PULSE:
-				//  delete interval timer
+				if(timer_delete(timerID) == -1) {
+					fprintf(stderr, "Timer delete error\n");
+					exit(EXIT_FAILURE);
+				}
 				if(name_detach(nat, 0) == -1) {
 					fprintf(stderr, "Name detach error\n");
 					exit(EXIT_FAILURE);
