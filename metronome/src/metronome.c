@@ -47,6 +47,11 @@ void metronome_thread() {
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
+
+	double secBeat = bpm / 60
+	double nanoSec = secBeat / t[row].interval_per_beat
+	int count = 0;
+	
 	int timer_return;
 	timer_t timerID;
 	struct itimerspec itimer;
@@ -104,7 +109,22 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
+<<<<<<< HEAD
+			//If timer 
+				if(count == 0) printf("%c%c", t[row].interval[count], t[row].interval[++count])
+			//if counter is at end print new line, reset counter
+				if(count == t[row].interval_per_beat - 1){
+					printf("%c\n"t[row].interval[count]);
+					count = 0;
+					break;
+				}
+				else printf("%c", t[row].interval[count]);
+				++count;
+				break;
+			case READ_PULSE:
+=======
 //				printf();
+>>>>>>> 52b792a0b516caf25f5b29af7d4ac517a025f2e1
 				break;
 			case PAUSE_PULSE:
 				break;
@@ -122,7 +142,6 @@ void metronome_thread() {
 			default:
 				fprintf(stderr, "");
 				break;
-
 			}
 		}
 	}
