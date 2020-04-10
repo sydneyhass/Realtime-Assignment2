@@ -4,7 +4,7 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 #include <sys/neutrino.h>
-
+#include <signal.h>
 #include <sys/siginfo.h>
 #include <time.h>
 
@@ -63,16 +63,13 @@ void metronome_thread() {
 		exit(EXIT_FAILURE);
 	}
 
-	//	  calculate the seconds-per-beat and nano seconds for the interval timer
-	double secBeat = bpm / 60;
-	double nanoSec = secBeat / t[row].interval_per_beat;
+	pulse_handler.sigev_notify = SIGEV_PULSE;
 
 	//	  create an interval timer to "drive" the metronome
 	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
 		fprintf(stderr, "Timer create error\n");
 		exit(EXIT_FAILURE);
 	}
-
 
 	//	  configure the interval timer to send a pulse to channel at attach when it expires
 	itimer.it_interval.tv_nsec = nanoSec;
@@ -103,7 +100,7 @@ void metronome_thread() {
 				++count;
 				break;
 			case PAUSE_PULSE:
-				itimer.it_value.tv_sec = msg.pulse.value;
+				itimer.it_value.tv_sec = msg.pulse.value.sival_int;
 				itimer.it_value.tv_nsec = 0;
 				if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
 						fprintf(stderr, "Timer set error\n");
