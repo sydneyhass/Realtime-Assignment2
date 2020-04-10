@@ -47,9 +47,6 @@ void metronome_thread() {
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
-
-	double secBeat = bpm / 60
-	double nanoSec = secBeat / t[row].interval_per_beat
 	int count = 0;
 	
 	int timer_return;
@@ -64,6 +61,8 @@ void metronome_thread() {
 	}
 
 	//	  calculate the seconds-per-beat and nano seconds for the interval timer
+	double secBeat = bpm / 60;
+	double nanoSec = secBeat / t[row].interval_per_beat;
 
 	//	  create an interval timer to "drive" the metronome
 	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
@@ -73,8 +72,8 @@ void metronome_thread() {
 
 
 	//	  configure the interval timer to send a pulse to channel at attach when it expires
-	itimer.it_interval.tv_nsec = 0;
-	itimer.it_interval.tv_sec = 0;
+	itimer.it_interval.tv_nsec = nanoSec;
+	itimer.it_interval.tv_sec = secBeat;
 	itimer.it_value.tv_sec = 0;
 	itimer.it_value.tv_nsec = 0;
 
@@ -82,24 +81,6 @@ void metronome_thread() {
 		fprintf(stderr, "Timer set error\n");
 		exit(EXIT_FAILURE);
 	}
-
-	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
-	//	  for (;;) {
-	//	    rcvid = MsgReceive(attach->chid);
-	//
-	//	    if ( rcvid == 0 )
-	//	      switch( msg.pulse_code )
-	//	        case: METRONOME.pulse_code
-	//	          //display the beat to stdout
-	//	          //  must handle 3 cases:
-	//	          //    start-of-measure: |1
-	//	          //    mid-measure: the symbol, as seen in the column "Pattern for Intervals within Each Beat"
-	//	          //    end-of-measure: \n
-	//
-	//	       case: PAUSE_PULSE:
-	//	       		// pause the running timer for pause <int> seconds
-	//	          // AVOID: calling sleep()
-	//
 
 	while(1) {
 		if((rcvid = MsgReceivePulse(nat->chid, &msg, sizeof(msg), NULL)) == -1) {
@@ -109,24 +90,23 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
-<<<<<<< HEAD
-			//If timer 
-				if(count == 0) printf("%c%c", t[row].interval[count], t[row].interval[++count])
-			//if counter is at end print new line, reset counter
-				if(count == t[row].interval_per_beat - 1){
-					printf("%c\n"t[row].interval[count]);
+				if(count == 0) printf("%c%c", t[row].interval[count], t[row].interval[count++]);
+
+				if(count == t[row].interval_per_beat - 1) {
+					printf("%c\n", t[row].interval[count]);
 					count = 0;
 					break;
 				}
 				else printf("%c", t[row].interval[count]);
 				++count;
 				break;
-			case READ_PULSE:
-=======
-//				printf();
->>>>>>> 52b792a0b516caf25f5b29af7d4ac517a025f2e1
-				break;
 			case PAUSE_PULSE:
+				itimer.it_value.tv_sec = msg.pulse.value;
+				itimer.it_value.tv_nsec = 0;
+				if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
+						fprintf(stderr, "Timer set error\n");
+						exit(EXIT_FAILURE);
+					}
 				break;
 			case QUIT_PULSE:
 				if(timer_delete(timerID) == -1) {
@@ -140,7 +120,7 @@ void metronome_thread() {
 				name_close(metronome_coid);
 				return exit(EXIT_SUCCESS);
 			default:
-				fprintf(stderr, "");
+				fprintf(stderr, "Command not recognized\n");
 				break;
 			}
 		}
