@@ -94,6 +94,8 @@ void metronome_thread() {
 		}
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
+			case METRONOME_PULSE:
+				break;
 			case READ_PULSE:
 				break;
 			case PAUSE_PULSE:
@@ -146,19 +148,38 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 {
 	int nb = 0;
 
+	//	int i, small_integer;
+	//			buf = (char *)(msg+1);
+	//
+	//			if(strstr(buf, "alert") != NULL){
+	//				for(i = 0; i < 2; i++){
+	//					alert_msg = strsep(&buf, " ");
+	//				}
+	//				small_integer = atoi(alert_msg);
+	//				if(small_integer >= 1 && small_integer <= 99){
+	//					MsgSendPulse(server_coid, SchedGet(0,0,NULL), _PULSE_CODE_MINAVAIL, small_integer);
+	//				} else {
+	//					printf("Integer is not between 1 and 99.\n");
+	//				}
+
 	if( msg->i.nbytes == ctp->info.msglen - (ctp->offset + sizeof(*msg) ))
 	{
 		char *buf;
+		char *pause_msg;
 		buf = (char *)(msg+1);
-		int pauseValue = 0;
+		int i, pauseValue = 0;
 		int priority = 0;
 
-		if(strcmp(buf, "pause") == 0) {
-			//			process pauseValue
-			//			validate pauseValue for range check
-			if(MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue) == -1) {
-				fprintf(stderr, "Error during message send pulse!\n");
-				exit(EXIT_FAILURE);
+		if(strstr(buf, "pause") != NULL) {
+			for(i = 0; i < 2; i++) {
+				pause_msg = strsep(&buf, " ");
+			}
+			pauseValue = atoi(pause_msg);
+			if(pauseValue >= 1 && pauseValue <= 9) {
+				if(MsgSendPulse(metronome_coid, priority, PAUSE_PULSE, pauseValue) == -1) {
+					fprintf(stderr, "Error during message send pulse!\n");
+					exit(EXIT_FAILURE);
+				}
 			}
 		} else if(strcmp(buf, "quit")) {
 			if(MsgSendPulse(metronome_coid, priority, QUIT_PULSE, pauseValue) == -1) {
@@ -193,10 +214,8 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void
 //
 //	  implement main(), following simple_resmgr2.c and Lab7 as a guide
 //	    device path (FQN): /dev/local/metronome
-//	    create the metronome thread in-between calling resmgr_attach() and while(1) { ctp = dispatch_block(... }
 
 int main(int argc, char* argv[]) {
-	DataTableRow row;
 	dispatch_t* dpp;
 	resmgr_io_funcs_t io_funcs;
 	resmgr_connect_funcs_t connect_funcs;
@@ -215,6 +234,7 @@ int main(int argc, char* argv[]) {
 				"%s:  Unable to allocate dispatch context.\n", argv [0]);
 		return (EXIT_FAILURE);
 	}
+
 	iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &connect_funcs, _RESMGR_IO_NFUNCS, &io_funcs);
 	connect_funcs.open = io_open;
 	io_funcs.read = io_read;
@@ -229,6 +249,8 @@ int main(int argc, char* argv[]) {
 				"%s:  Unable to attach name.\n", argv [0]);
 		return (EXIT_FAILURE);
 	}
+
+	metronome_thread();
 
 	ctp = dispatch_context_alloc(dpp);
 	while(1) {
