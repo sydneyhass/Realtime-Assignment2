@@ -57,6 +57,11 @@ void metronome_thread() {
 	//	  create an interval timer to "drive" the metronome
 	//	  configure the interval timer to send a pulse to channel at attach when it expires
 
+	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
+		fprintf(stderr, "Name attach error\n");
+		exit(EXIT_FAILURE);
+	}
+
 	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
 	//	  for (;;) {
 	//	    rcvid = MsgReceive(attach->chid);
@@ -74,18 +79,6 @@ void metronome_thread() {
 	//	       		// pause the running timer for pause <int> seconds
 	//	          // AVOID: calling sleep()
 	//
-	//	       case: QUIT_PULSE
-	//	       	  // implement Phase III:
-	//	          //  delete interval timer
-	//	          //  call name_detach()
-	//	          //  call name_close()
-	//	          //  exit with SUCCESS
-	//	  }
-	//
-	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
-		fprintf(stderr, "Name attach error\n");
-		exit(EXIT_FAILURE);
-	}
 
 	while(1) {
 		if((rcvid = MsgReceivePulse(nat->chid, &msg, sizeof(msg), NULL)) == -1) {
@@ -95,13 +88,20 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
+				printf();
 				break;
 			case READ_PULSE:
 				break;
 			case PAUSE_PULSE:
 				break;
 			case QUIT_PULSE:
-				break;
+				//  delete interval timer
+				if(name_detach(nat, 0) == -1) {
+					fprintf(stderr, "Name detach error\n");
+					exit(EXIT_FAILURE);
+				}
+				name_close(metronome_coid);
+				return exit(EXIT_SUCCESS);
 			default:
 				fprintf(stderr, "");
 				break;
@@ -147,20 +147,6 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 {
 	int nb = 0;
-
-	//	int i, small_integer;
-	//			buf = (char *)(msg+1);
-	//
-	//			if(strstr(buf, "alert") != NULL){
-	//				for(i = 0; i < 2; i++){
-	//					alert_msg = strsep(&buf, " ");
-	//				}
-	//				small_integer = atoi(alert_msg);
-	//				if(small_integer >= 1 && small_integer <= 99){
-	//					MsgSendPulse(server_coid, SchedGet(0,0,NULL), _PULSE_CODE_MINAVAIL, small_integer);
-	//				} else {
-	//					printf("Integer is not between 1 and 99.\n");
-	//				}
 
 	if( msg->i.nbytes == ctp->info.msglen - (ctp->offset + sizeof(*msg) ))
 	{
