@@ -5,6 +5,9 @@
 #include <sys/dispatch.h>
 #include <sys/neutrino.h>
 
+#include <sys/siginfo.h>
+#include <time.h>
+
 int metronome_coid;
 
 typedef union {
@@ -43,18 +46,23 @@ void metronome_thread() {
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
+	int timer;
 
 
 	// Phase I - create a named channel to receive pulses
-	//
-	//	  calculate the seconds-per-beat and nano seconds for the interval timer
-	//	  create an interval timer to "drive" the metronome
-	//	  configure the interval timer to send a pulse to channel at attach when it expires
-
 	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
 		fprintf(stderr, "Name attach error\n");
 		exit(EXIT_FAILURE);
 	}
+
+	//	  calculate the seconds-per-beat and nano seconds for the interval timer
+
+	//	  create an interval timer to "drive" the metronome
+	if((timer = timer_create()) == -1) {
+
+	}
+	//	  configure the interval timer to send a pulse to channel at attach when it expires
+
 
 	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
 	//	  for (;;) {
@@ -82,7 +90,7 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
-				printf();
+//				printf();
 				break;
 			case READ_PULSE:
 				break;
