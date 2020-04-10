@@ -5,6 +5,9 @@
 #include <sys/dispatch.h>
 #include <sys/neutrino.h>
 
+#include <sys/siginfo.h>
+#include <time.h>
+
 int metronome_coid;
 
 typedef union {
@@ -41,23 +44,46 @@ struct DataTableRow t[] = {
 };
 
 void metronome_thread() {
+	struct sigevent pulse_handler;
 	name_attach_t *nat;
 	my_message_t msg;
 	int rcvid;
-	int secBeat = bpm / 60
+
+	double secBeat = bpm / 60
 	double nanoSec = secBeat / t[row].interval_per_beat
 	int count = 0;
 	
-	// Phase I - create a named channel to receive pulses
-	//
-	//	  calculate the seconds-per-beat and nano seconds for the interval timer
-	//	  create an interval timer to "drive" the metronome
-	//	  configure the interval timer to send a pulse to channel at attach when it expires
+	int timer_return;
+	timer_t timerID;
+	struct itimerspec itimer;
 
+
+	// Phase I - create a named channel to receive pulses
 	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
 		fprintf(stderr, "Name attach error\n");
 		exit(EXIT_FAILURE);
 	}
+
+	//	  calculate the seconds-per-beat and nano seconds for the interval timer
+
+	//	  create an interval timer to "drive" the metronome
+	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
+		fprintf(stderr, "Timer create error\n");
+		exit(EXIT_FAILURE);
+	}
+
+	itimer.it_interval.tv_nsec = 0;
+	itimer.it_interval.tv_sec = 0;
+	itimer.it_value.tv_sec = 0;
+	itimer.it_value.tv_nsec = 0;
+
+	if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
+		fprintf(stderr, "Timer set error\n");
+		exit(EXIT_FAILURE);
+	}
+
+	//	  configure the interval timer to send a pulse to channel at attach when it expires
+
 
 	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
 	//	  for (;;) {
@@ -85,6 +111,7 @@ void metronome_thread() {
 		if(rcvid == 0) {
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
+<<<<<<< HEAD
 			//If timer 
 				if(count == 0) printf("%c%c", t[row].interval[count], t[row].interval[++count])
 			//if counter is at end print new line, reset counter
@@ -97,11 +124,17 @@ void metronome_thread() {
 				++count;
 				break;
 			case READ_PULSE:
+=======
+//				printf();
+>>>>>>> 52b792a0b516caf25f5b29af7d4ac517a025f2e1
 				break;
 			case PAUSE_PULSE:
 				break;
 			case QUIT_PULSE:
-				//  delete interval timer
+				if(timer_delete(timerID) == -1) {
+					fprintf(stderr, "Timer delete error\n");
+					exit(EXIT_FAILURE);
+				}
 				if(name_detach(nat, 0) == -1) {
 					fprintf(stderr, "Name detach error\n");
 					exit(EXIT_FAILURE);
