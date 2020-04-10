@@ -48,8 +48,8 @@ void metronome_thread() {
 	my_message_t msg;
 	int rcvid;
 
-	double secBeat = bpm / 60
-	double nanoSec = secBeat / t[row].interval_per_beat
+	float secBeat = bpm / 60;
+	long nanoSec = secBeat / t[row].interval_per_beat * 1000000000;
 	int count = 0;
 	
 	int timer_return;
@@ -73,10 +73,8 @@ void metronome_thread() {
 
 
 	//	  configure the interval timer to send a pulse to channel at attach when it expires
-	itimer.it_interval.tv_nsec = 0;
-	itimer.it_interval.tv_sec = 0;
-	itimer.it_value.tv_sec = 0;
-	itimer.it_value.tv_nsec = 0;
+	itimer.it_interval.tv_nsec = nanoSec;
+	itimer.it_value.tv_sec = secBeat;
 
 	if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
 		fprintf(stderr, "Timer set error\n");
@@ -147,9 +145,9 @@ int io_read(resmgr_context_t *ctp, io_read_t *msg, RESMGR_OCB_T *ocb)
 {
 	int nb;
 	if(data == NULL) return 0;
-
-	//	sprintf(data, "[metronome: %d beats/min, time signature: %d%d, secs-per-beat: %.2f, nanoSecs: %d]\n",
-	//			);
+	float secBeat = bpm / 60;
+	long nanoSec = secBeat / t[row].interval_per_beat * 1000000000;
+	sprintf(data, "[metronome: %d beats/min, time signature:d, s %d/%ecs-per-beat: %.2f, nanoSecs: %lu]\n", bpm, t[row].time_sig_top, t[row].time_sig_bottom, secBeat, nanoSec);
 
 	nb = strlen(data);
 
