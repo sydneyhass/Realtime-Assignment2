@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/siginfo.h>
 #include <time.h>
+#include <sys/netmgr.h>
 
 int metronome_coid;
 
@@ -42,7 +43,9 @@ struct DataTableRow t[] = {
 		{12, 8, 12, "|1&a2&a3&a4&a"}
 };
 
-void metronome_thread() {
+
+
+void* metronome_thread() {
 	struct sigevent pulse_handler;
 	name_attach_t *nat;
 	my_message_t msg;
@@ -56,22 +59,20 @@ void metronome_thread() {
 	timer_t timerID;
 	struct itimerspec itimer;
 
-
-	// Phase I - create a named channel to receive pulses
 	if((nat = name_attach( NULL, "metronome", 0)) == NULL) {
 		fprintf(stderr, "Name attach error\n");
 		exit(EXIT_FAILURE);
 	}
 
-	pulse_handler.sigev_notify = SIGEV_PULSE;
+	SIGEV_PULSE_INIT(&pulse_handler, metronome_coid, SIGEV_PULSE_PRIO_INHERIT, 0, 0);
 
-	//	  create an interval timer to "drive" the metronome
+	// create an interval timer to "drive" the metronome
 	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
 		fprintf(stderr, "Timer create error\n");
 		exit(EXIT_FAILURE);
 	}
 
-	//	  configure the interval timer to send a pulse to channel at attach when it expires
+	// configure the interval timer to send a pulse to channel at attach when it expires
 	itimer.it_interval.tv_nsec = nanoSec;
 	itimer.it_value.tv_sec = secBeat;
 
@@ -86,6 +87,7 @@ void metronome_thread() {
 			exit(EXIT_FAILURE);
 		}
 		if(rcvid == 0) {
+			printf("%d\n", msg.pulse.code);
 			switch(msg.pulse.code) {
 			case METRONOME_PULSE:
 			//If timer 
@@ -117,7 +119,7 @@ void metronome_thread() {
 					exit(EXIT_FAILURE);
 				}
 				name_close(metronome_coid);
-				return exit(EXIT_SUCCESS);
+				exit(EXIT_SUCCESS);
 			default:
 				fprintf(stderr, "Command not recognized\n");
 				break;
@@ -181,6 +183,8 @@ int io_write(resmgr_context_t *ctp, io_write_t *msg, RESMGR_OCB_T *ocb)
 					fprintf(stderr, "Error during message send pulse!\n");
 					exit(EXIT_FAILURE);
 				}
+			} else {
+				printf("Pause value was less than 1 or greater than 9\n");
 			}
 		} else if(strcmp(buf, "quit")) {
 			if(MsgSendPulse(metronome_coid, priority, QUIT_PULSE, pauseValue) == -1) {
@@ -208,16 +212,13 @@ int io_open(resmgr_context_t *ctp, io_open_t *msg, RESMGR_HANDLE_T *handle, void
 	return (iofunc_open_default (ctp, msg, handle, extra));
 }
 
-//	  process the command-line arguments:
-//	    beats-per-minute
-//	    time-signature (top)
-//	    time-signature (bottom)
 int main(int argc, char* argv[]) {
 	dispatch_t* dpp;
 	resmgr_io_funcs_t io_funcs;
 	resmgr_connect_funcs_t connect_funcs;
 	iofunc_attr_t ioattr;
 	dispatch_context_t   *ctp;
+	pthread_attr_t attr;
 	int length = sizeof(t) / sizeof(t[0]);
 
 	if(argc != 4) {
@@ -254,7 +255,9 @@ int main(int argc, char* argv[]) {
 		return (EXIT_FAILURE);
 	}
 
-	metronome_thread();
+	pthread_attr_init(&attr);
+	pthread_create(NULL, &attr, &metronome_thread, NULL);
+	pthread_attr_destroy(&attr);
 
 	ctp = dispatch_context_alloc(dpp);
 	while(1) {
