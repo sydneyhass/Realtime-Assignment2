@@ -64,6 +64,8 @@ void metronome_thread() {
 	}
 
 	//	  calculate the seconds-per-beat and nano seconds for the interval timer
+	double secBeat = bpm / 60;
+	double nanoSec = secBeat / t[row].interval_per_beat;
 
 	//	  create an interval timer to "drive" the metronome
 	if((timer_return = timer_create(CLOCK_REALTIME, &pulse_handler, &timerID)) == -1) {
@@ -80,24 +82,6 @@ void metronome_thread() {
 		fprintf(stderr, "Timer set error\n");
 		exit(EXIT_FAILURE);
 	}
-
-	// Phase II - receive pulses from interval timer OR io_write(pause, quit)
-	//	  for (;;) {
-	//	    rcvid = MsgReceive(attach->chid);
-	//
-	//	    if ( rcvid == 0 )
-	//	      switch( msg.pulse_code )
-	//	        case: METRONOME.pulse_code
-	//	          //display the beat to stdout
-	//	          //  must handle 3 cases:
-	//	          //    start-of-measure: |1
-	//	          //    mid-measure: the symbol, as seen in the column "Pattern for Intervals within Each Beat"
-	//	          //    end-of-measure: \n
-	//
-	//	       case: PAUSE_PULSE:
-	//	       		// pause the running timer for pause <int> seconds
-	//	          // AVOID: calling sleep()
-	//
 
 	while(1) {
 		if((rcvid = MsgReceivePulse(nat->chid, &msg, sizeof(msg), NULL)) == -1) {
@@ -118,9 +102,13 @@ void metronome_thread() {
 				else printf("%c", t[row].interval[count]);
 				++count;
 				break;
-			case READ_PULSE:
-				break;
 			case PAUSE_PULSE:
+				itimer.it_value.tv_sec = msg.pulse.value;
+				itimer.it_value.tv_nsec = 0;
+				if((timer_settime(timerID, 0, &itimer, NULL)) == -1) {
+						fprintf(stderr, "Timer set error\n");
+						exit(EXIT_FAILURE);
+					}
 				break;
 			case QUIT_PULSE:
 				if(timer_delete(timerID) == -1) {
@@ -134,7 +122,7 @@ void metronome_thread() {
 				name_close(metronome_coid);
 				return exit(EXIT_SUCCESS);
 			default:
-				fprintf(stderr, "");
+				fprintf(stderr, "Command not recognized\n");
 				break;
 			}
 		}
