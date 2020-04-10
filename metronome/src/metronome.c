@@ -25,6 +25,7 @@ typedef union {
 #define QUIT_PULSE	(METRONOME_PULSE + 3)
 
 char data[255];
+int bpm;
 
 struct DataTableRow {
 	int time_sig_top;
@@ -207,11 +208,18 @@ int main(int argc, char* argv[]) {
 	resmgr_connect_funcs_t connect_funcs;
 	iofunc_attr_t ioattr;
 	dispatch_context_t   *ctp;
+	int length = sizeof(t) / sizeof(t[0]);
 
 	if(argc != 4) {
 		fprintf(stderr, "Error! Wrong number of arguments. Received %d, expected 4.\n", argc);
 		exit(EXIT_FAILURE);
 	}
+
+	for(int i = 0; i < length; ++i){
+		if(t[i].time_sig_top == atoi(argv[2]) && t[i].time_sig_bottom == atoi(argv[3])) row = i;
+	}
+
+	bpm = atoi(argv[1]);
 
 	int id;
 
